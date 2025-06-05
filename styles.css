@@ -66,7 +66,7 @@ body::before {
     caret-color: #667eea;
 }
 
-/* .add-button {
+.add-button {
     padding: 18px 32px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
@@ -82,7 +82,7 @@ body::before {
     position: relative;
     overflow: hidden;
     min-width: 120px;
-} */
+}
 
 .add-button::before {
     content: '';
