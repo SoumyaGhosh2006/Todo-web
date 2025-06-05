@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Input with Button</title>
+   <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+    <div class="todo-container">
+        <input type="text" id="taskInput" class="todo-input" placeholder="Enter a task">
+        <input type="text" id="taskP" class="todo-input" placeholder="Enter priority">
+        <button class="add-button" onclick="addTask()">Add</button>
+    </div>
+    
+    <div class="dropdown">
+        <button class="dropbtn">Options</button>
+        <div class="dropdown-content">
+          <a href="#" onclick="filterTasks('all')">All</a>
+          <a href="#" onclick="filterTasks('completed')">Completed</a>
+          <a href="#" onclick="filterTasks('pending')">Pending</a>
+        </div>
+    </div>
+    
+    <ul id="taskList"></ul>
+    <div id="dropZone">Drop here to remove</div>
+
+    <script src="./script.js"></script>
+
+</body>
+</html>
