@@ -1,4 +1,5 @@
-let draggedIndex = null;
+let list = JSON.parse(localStorage.getItem('tasks')) || [];
+        let draggedIndex = null;
         let currentFilter = 'all';
 
         window.onload = function() {
@@ -16,20 +17,28 @@ let draggedIndex = null;
                 return;
             }
 
-            list.push({
+            const newTask = {
                 title: taskText,
                 priority: taskPriority || 'Normal',
                 completed: false
-            });
+            };
 
-            console.log(list);
+            list.push(newTask);
+            localStorage.setItem('tasks', JSON.stringify(list));
+            console.log('Task added:', newTask);
+            console.log('Current list:', list);
+            
             renderList();
             taskInput.value = "";
             taskP.value = "";
+            
+            // Focus back to input for better mobile UX
+            taskInput.focus();
         }
 
         function toggleTask(index) {
             list[index].completed = !list[index].completed;
+            localStorage.setItem('tasks', JSON.stringify(list));
             renderList();
         }
 
@@ -50,7 +59,10 @@ let draggedIndex = null;
         }
 
         function renderList(){
+            console.log('Rendering list, total tasks:', list.length);
             const filteredList = getFilteredList();
+            console.log('Filtered list length:', filteredList.length);
+            
             let listStr = "";
             
             for(let i = 0; i < filteredList.length; i++){
@@ -71,6 +83,7 @@ let draggedIndex = null;
             
             const taskList = document.getElementById('taskList');
             taskList.innerHTML = listStr;
+            console.log('Tasks rendered to DOM');
             
             // Add drag event listeners to all task items
             addDragListeners();
@@ -124,6 +137,7 @@ let draggedIndex = null;
                         const draggedTask = list[draggedIndex];
                         list.splice(draggedIndex, 1);
                         list.splice(targetIndex, 0, draggedTask);
+                        localStorage.setItem('tasks', JSON.stringify(list));
                         
                         renderList();
                     }
@@ -134,7 +148,8 @@ let draggedIndex = null;
         }
 
         function deleteTask(index) {
-            list.splice(index, 1); 
+            list.splice(index, 1);
+            localStorage.setItem('tasks', JSON.stringify(list));
             console.log(list);  
             renderList();
         }
@@ -159,6 +174,7 @@ let draggedIndex = null;
             if (draggedIndex !== null) {
                 // Delete the dragged task
                 list.splice(draggedIndex, 1);
+                localStorage.setItem('tasks', JSON.stringify(list));
                 renderList();
                 draggedIndex = null;
             }
