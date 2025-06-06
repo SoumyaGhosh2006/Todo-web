@@ -2,8 +2,6 @@ let list = JSON.parse(localStorage.getItem('tasks')) || [];
 let draggedIndex = null;
 let currentFilter = 'all';
 
-let touchStartX = 0;
-let touchStartY = 0;
 let isDragging = false;
 let draggedElement = null;
 
@@ -80,6 +78,7 @@ function addDragListeners() {
     const taskItems = document.querySelectorAll('.task-item');
 
     taskItems.forEach(item => {
+        // Desktop drag
         item.addEventListener('dragstart', (e) => {
             draggedIndex = parseInt(e.target.dataset.index);
             e.target.classList.add('dragging');
@@ -88,12 +87,10 @@ function addDragListeners() {
 
         item.addEventListener('dragend', (e) => {
             e.target.classList.remove('dragging');
-            taskItems.forEach(i => i.classList.remove('drag-over'));
+            document.querySelectorAll('.task-item').forEach(i => i.classList.remove('drag-over'));
         });
 
-        item.addEventListener('dragover', (e) => {
-            e.preventDefault();
-        });
+        item.addEventListener('dragover', (e) => e.preventDefault());
 
         item.addEventListener('dragenter', (e) => {
             e.preventDefault();
@@ -104,7 +101,7 @@ function addDragListeners() {
         });
 
         item.addEventListener('dragleave', (e) => {
-            e.target.closest('.task-item').classList.remove('drag-over');
+            e.target.closest('.task-item')?.classList.remove('drag-over');
         });
 
         item.addEventListener('drop', (e) => {
@@ -120,29 +117,42 @@ function addDragListeners() {
             draggedIndex = null;
         });
 
-        // --- TOUCH SUPPORT ---
+        // --- Touch Events (Mobile Support with visual feedback) ---
         item.addEventListener('touchstart', (e) => {
-            touchStartX = e.touches[0].clientX;
-            touchStartY = e.touches[0].clientY;
-            isDragging = false;
+            const touch = e.touches[0];
+            isDragging = true;
+            draggedIndex = parseInt(item.dataset.index);
             draggedElement = item;
-
-            setTimeout(() => {
-                if (!isDragging) {
-                    isDragging = true;
-                    draggedIndex = parseInt(item.dataset.index);
-                    item.classList.add('dragging');
-                }
-            }, 200);
+        
+            // Trigger short vibration
+            if (navigator.vibrate) navigator.vibrate(10);
+        
+            const clone = item.cloneNode(true);
+            clone.id = 'drag-clone';
+            clone.style.position = 'fixed';
+            clone.style.pointerEvents = 'none';
+            clone.style.top = `${touch.clientY}px`;
+            clone.style.left = `${touch.clientX}px`;
+            clone.style.opacity = '0.8';
+            clone.style.width = `${item.offsetWidth}px`;
+            clone.style.zIndex = 9999;
+            clone.style.transform = 'scale(1.03)';
+            clone.style.boxShadow = '0 8px 16px rgba(0,0,0,0.2)';
+            document.body.appendChild(clone);
         }, { passive: true });
-
+        
         item.addEventListener('touchmove', (e) => {
-            if (isDragging && draggedElement) {
+            if (isDragging) {
                 e.preventDefault();
                 const touch = e.touches[0];
-                const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+                const clone = document.getElementById('drag-clone');
+                if (clone) {
+                    clone.style.top = `${touch.clientY - 30}px`;
+                    clone.style.left = `${touch.clientX - clone.offsetWidth / 2}px`;
+                }
 
-                taskItems.forEach(i => i.classList.remove('drag-over'));
+                const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+                document.querySelectorAll('.task-item').forEach(i => i.classList.remove('drag-over'));
 
                 if (elementBelow?.closest('.task-item')) {
                     const targetItem = elementBelow.closest('.task-item');
@@ -163,16 +173,17 @@ function addDragListeners() {
         }, { passive: false });
 
         item.addEventListener('touchend', (e) => {
+            const clone = document.getElementById('drag-clone');
+            if (clone) clone.remove();
+        
             if (isDragging && draggedElement) {
                 const touch = e.changedTouches[0];
                 const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
-
-                draggedElement.classList.remove('dragging');
-                taskItems.forEach(i => i.classList.remove('drag-over'));
-
+        
+                document.querySelectorAll('.task-item').forEach(i => i.classList.remove('drag-over'));
                 const dropZone = document.getElementById('dropZone');
                 const rect = dropZone.getBoundingClientRect();
-
+        
                 if (
                     touch.clientX >= rect.left &&
                     touch.clientX <= rect.right &&
@@ -180,26 +191,32 @@ function addDragListeners() {
                     touch.clientY <= rect.bottom
                 ) {
                     list.splice(draggedIndex, 1);
-                    localStorage.setItem('tasks', JSON.stringify(list));
-                    renderList();
+        
+                    // Long vibration for deletion
+                    if (navigator.vibrate) navigator.vibrate(50);
                 } else if (elementBelow?.closest('.task-item')) {
                     const targetIndex = parseInt(elementBelow.closest('.task-item').dataset.index);
-                    if (draggedIndex !== null && targetIndex !== draggedIndex) {
-                        const [task] = list.splice(draggedIndex, 1);
-                        list.splice(targetIndex, 0, task);
-                        localStorage.setItem('tasks', JSON.stringify(list));
-                        renderList();
+                    if (targetIndex !== draggedIndex) {
+                        const [moved] = list.splice(draggedIndex, 1);
+                        list.splice(targetIndex, 0, moved);
+        
+                        // Double-pulse vibration for reorder
+                        if (navigator.vibrate) navigator.vibrate([10, 30, 10]);
                     }
                 }
-
-                isDragging = false;
-                draggedIndex = null;
-                draggedElement = null;
+        
+                localStorage.setItem('tasks', JSON.stringify(list));
+                renderList();
             }
-        }, { passive: true });
+        
+            isDragging = false;
+            draggedIndex = null;
+            draggedElement = null;
+        }, { passive: true });        
     });
 }
 
+// Drop zone logic
 const dropZone = document.getElementById('dropZone');
 dropZone.addEventListener('dragover', (e) => {
     e.preventDefault();
@@ -219,6 +236,7 @@ dropZone.addEventListener('drop', (e) => {
     }
 });
 
+// Enter to add
 document.getElementById('taskInput').addEventListener('keypress', function (e) {
     if (e.key === 'Enter') addTask();
 });
