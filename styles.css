@@ -496,8 +496,6 @@ body::before {
     margin: 0;
     width: 100%;
     max-width: 1200px;
-    max-height: 450px;
-    overflow-y: auto;
     padding-right: 8px;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
